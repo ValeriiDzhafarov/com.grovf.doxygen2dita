@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- <?xml-model 
-    href="https://www.dita-ot.org/rng/plugin.rnc"
-    type="application/relax-ng-compact-syntax" 
-    schematypens="http://www.w3.org/2001/XMLSchema"
-?> -->
+<?xml version='1.0' encoding='UTF-8'?>
+<?xml-model href="https://www.dita-ot.org/rng/plugin.rnc" type="application/relax-ng-compact-syntax"?>
 
 <plugin id="com.grovf.dox2dita">
+    <require plugin="org.dita.pdf2"/>
+  
+    <feature extension="package.support.name" value="Eliot Kimber"/>
     
 </plugin>
