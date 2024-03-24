@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-model 
+<!-- <?xml-model 
     href="https://www.dita-ot.org/rng/plugin.rnc"
     type="application/relax-ng-compact-syntax" 
     schematypens="http://www.w3.org/2001/XMLSchema"
-?>
+?> -->
 
 <plugin id="com.grovf.dox2dita">
     
