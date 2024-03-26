@@ -5,7 +5,7 @@
     schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<plugin id="com.grovf.dox2dita" version="0.0.1" >
+<plugin id="com.grovf.dox2dita" version="0.0.2" >
     <metadata type="author" value="Valerii Dzhafarov"/>
     <transtype name="dox2dita"/>
     <template file="xsl/doxygen2ditaImpl.xsl"/>
