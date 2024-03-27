@@ -2,11 +2,10 @@
 <?xml-model 
     href="https://www.dita-ot.org/rng/plugin.rnc"
     type="application/relax-ng-compact-syntax" 
-    schematypens="http://www.w3.org/2001/XMLSchema"
 ?>
 
-<plugin id="com.grovf.dox2dita" version="0.0.2" >
-    <metadata type="author" value="Valerii Dzhafarov"/>
-    <transtype name="dox2dita"/>
-    <template file="xsl/doxygen2ditaImpl.xsl"/>
+<plugin id="com.grovf.dox2dita" version="0.0.3" >
+    <metadata type="author"    value="Valerii Dzhafarov"/>
+    <feature extension="dita.xsl.xsl" file="xsl/doxygen2dita.xsl"/>
+    <require plugin="org.dita.base"/>
 </plugin>
