@@ -6,6 +6,6 @@
 
 <plugin id="com.grovf.dox2dita" version="0.0.3" >
     <metadata type="author"    value="Valerii Dzhafarov"/>
-    <feature extension="dita.xsl.xsl" file="xsl/doxygen2dita.xsl"/>
+    <feature extension="org.dita.xhtml.xsl" file="xsl/doxygen2dita.xsl"/>
     <require plugin="org.dita.base"/>
 </plugin>
