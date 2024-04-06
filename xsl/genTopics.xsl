@@ -285,7 +285,7 @@
   </xsl:template>
   
   <xsl:template mode="enumValuesDescr" match="element()">
-    <xsl:if test="enumvalue[service:isNotEmptyElements(briefdescription)]">  
+    <xsl:if test="enumvalue[service:isNotEmptyElements(briefdescription|detaileddescription)]">  
       <table frame="none">
         <tgroup cols="2">
           <tbody>
@@ -293,7 +293,7 @@
              <row>
                <entry outputclass="enumvalue name"><xsl:value-of select="name"/></entry>
               <entry>
-                 <xsl:apply-templates select="briefdescription"/>
+                <xsl:apply-templates select="briefdescription,detaileddescription"/>
                </entry>
              </row>
           </xsl:for-each>
