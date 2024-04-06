@@ -15,5 +15,4 @@
   
   <xsl:param name="internalAudience" as="xs:string" select="'internal'"/>
   <xsl:param name="unknown_ref" as="xs:string" select="'__unknown_ref__'"/>
-  
 </xsl:stylesheet>

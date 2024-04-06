@@ -611,8 +611,7 @@
     <xsl:apply-templates select="$refTypeElem" mode="refType"/>
   </xsl:template>
   
-
-  <xsl:template match="msc | tableofcontents">
+  <xsl:template match="tableofcontents">
     <xsl:message>[WARN] XSLT conversion rules doesn't support tag[<xsl:value-of select="name()"/>] yet. Document: <xsl:value-of select="base-uri()"/> </xsl:message>
   </xsl:template>
   

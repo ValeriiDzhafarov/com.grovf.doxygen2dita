@@ -10,6 +10,7 @@
   <xsl:import href="postProcessing.xsl"/>
   <xsl:import href="genTopics.xsl"/>
   <xsl:import href="serviceFunctions.xsl"/>
+  <xsl:import href="genMsc.xsl"/>
 
   <xsl:output 
     doctype-public="-//OASIS//DTD DITA Map//EN" 
@@ -33,7 +34,6 @@
     doctype-public="-//OASIS//DTD DITA Topic//EN" 
     doctype-system="topic.dtd"
     indent="no"
-    
   />
   
   <xsl:variable name="compoundKinds" as="xs:string+"
@@ -117,8 +117,7 @@
     <xsl:if test="$doDebug">  
       <xsl:message> ditaTopicsOut = <xsl:copy-of select="$ditaTopicsOut"/> </xsl:message>
     </xsl:if>
-    
-    
+        
     <!-- Print out Dita Topics-->
     <xsl:for-each select="$ditaTopicsOut/topic">
       <xsl:result-document href="{service:genDitaTopicRelPath(@id)}" format="topic">
