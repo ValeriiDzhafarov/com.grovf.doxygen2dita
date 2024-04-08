@@ -56,7 +56,6 @@
     select="(
       'page', 
       'file', 
-      'dir', 
       'class', 
       'struct', 
       'union', 

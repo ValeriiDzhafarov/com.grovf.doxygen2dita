@@ -8,12 +8,33 @@
   exclude-result-prefixes="xs xd service svg"
   version="2.0">
   
-  <xsl:function name="service:change_commas_in_quads" as="xs:string*">
-    <xsl:param name="in"/>
-
+  <xsl:param name="msc-quantum" as="xs:float" select="8"/>
+  <xsl:param name="msc-max-w"   as="xs:float" select="180"/>
+  <xsl:param name="msc-max-h"   as="xs:float" select="250"/>
+  
+  <xsl:param name="msc-font-size" as="xs:float" select="0.5"/>
+  <xsl:param name="msc-w-rect"    as="xs:float" select="14"/>
+  <xsl:param name="msc-w-space"   as="xs:float" select="1"/>
+  <xsl:param name="msc-h-rect"    as="xs:float" select="1"/>
+  <xsl:param name="msc-h-space"   as="xs:float" select="0.5"/>
+   
+  <xsl:variable name="w_rect"  as="xs:float" select="$msc-quantum * $msc-w-rect"/>
+  <xsl:variable name="w_space" as="xs:float" select="$msc-quantum * $msc-w-space"/>
+  <xsl:variable name="font-size"    as="xs:float" select="$msc-quantum * $msc-font-size"/>
+  <xsl:variable name="h_rect"  as="xs:float" select="$msc-quantum * $msc-h-rect"/>
+  <xsl:variable name="h_space" as="xs:float" select="$msc-quantum * $msc-h-space"/>
+  
+ 
+  <xsl:function name="service:change_symb_in_quads" as="xs:string*">
+    <xsl:param name="in" as="xs:string*"/>
+    <xsl:param name="open_symb" as="xs:string"/>
+    <xsl:param name="close_symb" as="xs:string"/>
+    <xsl:param name="symb4replace" as="xs:string"/>
+    <xsl:param name="replacing_symb" as="xs:string"/>
+    
     <xsl:variable name="out" as="xs:string*">
       <xsl:for-each select="$in">
-        <xsl:value-of select="service:recursive_change_commas_in_quads(.,false())"/>     
+        <xsl:value-of select="service:recursive_change_symb_in_quads(.,false(),$open_symb,$close_symb,$symb4replace,$replacing_symb)"/>     
       </xsl:for-each>    
     </xsl:variable>
         
@@ -21,36 +42,40 @@
 
   </xsl:function>
 
-  <xsl:function name="service:recursive_change_commas_in_quads" as="xs:string*">
+  <xsl:function name="service:recursive_change_symb_in_quads" as="xs:string*">
     <xsl:param name="in"        as="xs:string" />    
     <xsl:param name="opened"    as="xs:boolean"/>
+    <xsl:param name="open_symb" as="xs:string"/>
+    <xsl:param name="close_symb" as="xs:string"/>
+    <xsl:param name="symb4replace" as="xs:string"/>
+    <xsl:param name="replacing_symb" as="xs:string"/>
     
     <xsl:choose>
-      <xsl:when test="not(contains($in,'[') or contains($in,']' ) )">
+      <xsl:when test="not(contains($in,$open_symb) or contains($in,$close_symb) )">
         <xsl:sequence><xsl:value-of select="$in"/></xsl:sequence>
       </xsl:when>
       <xsl:when test="$opened">
-        <xsl:variable name="string_before_close" select="substring-before($in,']')" as="xs:string*"/>
-        <xsl:variable name="string_after_close"  select="substring-after($in,']')" as="xs:string*"/>
+        <xsl:variable name="string_before_close" select="substring-before($in,$close_symb)" as="xs:string*"/>
+        <xsl:variable name="string_after_close"  select="substring-after($in,$close_symb)" as="xs:string*"/>
         
         <xsl:sequence>
           <xsl:value-of select="concat(
-            replace($string_before_close,',','&apos;&apos;'),
-            ']',
-            service:recursive_change_commas_in_quads($string_after_close,false())
+            replace($string_before_close,$symb4replace,$replacing_symb),
+            $close_symb,
+            service:recursive_change_symb_in_quads($string_after_close,false(),$open_symb,$close_symb,$symb4replace,$replacing_symb)
             )"/>
         </xsl:sequence>      
       </xsl:when>
       <xsl:when test="not($opened)">
-        <xsl:variable name="string_before_open" select="substring-before($in,'[')" as="xs:string*"/>
-        <xsl:variable name="string_after_open"  select="substring-after($in,'[')" as="xs:string*"/>
+        <xsl:variable name="string_before_open" select="substring-before($in,$open_symb)" as="xs:string*"/>
+        <xsl:variable name="string_after_open"  select="substring-after($in,$open_symb)" as="xs:string*"/>
         <xsl:sequence>
           <xsl:value-of select="concat(
             $string_before_open,
-            '[',
-            service:recursive_change_commas_in_quads($string_after_open,true())
+            $open_symb,
+            service:recursive_change_symb_in_quads($string_after_open,true(),$open_symb,$close_symb,$symb4replace,$replacing_symb)
             )"/> 
-        </xsl:sequence>      
+        </xsl:sequence>
       </xsl:when>      
     </xsl:choose>
    
@@ -79,9 +104,15 @@
     <xsl:variable name="entities" as="xs:string"  select="$chart_rows[xs:integer($options_is_exist)+1]"/>
     <xsl:variable name="arcsets" as="xs:string*" select="$chart_rows[(xs:integer($options_is_exist)+1) &lt; position()]"/>
     
-    <!--Replace ',' into [] for easier parsing below-->   
-    <xsl:variable name="entities_ch" as="xs:string"  select="service:change_commas_in_quads($entities)"/>
-    <xsl:variable name="arcsets_ch"  as="xs:string*" select="service:change_commas_in_quads($arcsets)" />
+    
+    <!--Replace ',' into '""' with '#sc' for easier parsing-->   
+    <xsl:variable name="entities_ch0" as="xs:string"  select="service:change_symb_in_quads($entities,'&quot;','&quot;',',','#sc')" />
+    <xsl:variable name="arcsets_ch0"  as="xs:string*" select="service:change_symb_in_quads($arcsets,'&quot;','&quot;',',','#sc')" />
+ 
+    <!--Replace ',' into "[]" with ';' for easier parsing-->   
+    <xsl:variable name="entities_ch" as="xs:string"  select="service:change_symb_in_quads($entities_ch0,'[',']',',',';')" />
+    <xsl:variable name="arcsets_ch"  as="xs:string*" select="service:change_symb_in_quads($arcsets_ch0,'[',']',',',';')" />
+    
     
     <!--generate msc in XML format-->
     <xsl:variable name="xml-msc" as="element()">
@@ -98,11 +129,11 @@
                       <xsl:value-of select="normalize-space(regex-group(1))"/>
                     </xsl:attribute>
                     <xsl:if test="regex-group(3)">
-                      <xsl:for-each select="tokenize(regex-group(3),'&apos;&apos;')">
+                      <xsl:for-each select="tokenize(regex-group(3),';')">
                         <xsl:analyze-string select="normalize-space(.)" regex="^(\w+)\s*=\s*&quot;(.*?)&quot;$">
                           <xsl:matching-substring>
                             <xsl:attribute name="{normalize-space(regex-group(1))}">
-                              <xsl:value-of select="normalize-space(regex-group(2))"/>
+                              <xsl:value-of select="replace(normalize-space(regex-group(2)),'#sc',',')"/>
                             </xsl:attribute>                    
                           </xsl:matching-substring>
                         </xsl:analyze-string>                      
@@ -135,11 +166,11 @@
                         </xsl:matching-substring>
                       </xsl:analyze-string>
                       <xsl:if test="regex-group(3)">
-                        <xsl:for-each select="tokenize(regex-group(3),'&apos;&apos;')">
+                        <xsl:for-each select="tokenize(regex-group(3),';')">
                           <xsl:analyze-string select="normalize-space(.)" regex="^(\w+)\s*=\s*&quot;(.*?)&quot;$">
                             <xsl:matching-substring>
                               <xsl:attribute name="{normalize-space(regex-group(1))}">
-                                <xsl:value-of select="normalize-space(regex-group(2))"/>
+                                <xsl:value-of select="replace(normalize-space(regex-group(2)),'#sc',',')"/>
                               </xsl:attribute>                    
                             </xsl:matching-substring>
                           </xsl:analyze-string>                      
@@ -159,20 +190,10 @@
   </xsl:template>
     
   <xsl:template match="xml-msc" mode="draw">
-    <xsl:variable name="max_w"  as="xs:integer" select="180"/>
-    <xsl:variable name="max_h"  as="xs:integer" select="250"/>
     
-    <xsl:variable name="quantum"      as="xs:integer" select="8"/>
-    <xsl:variable name="font-size"    as="xs:integer" select="xs:integer($quantum div 2)"/>
     <xsl:variable name="font-family"  as="xs:string"  select="'Roboto Mono Thin'"/>
     
-    <xsl:variable name="w_rect"  as="xs:integer" select="$quantum*6"/>
-    <xsl:variable name="w_space" as="xs:integer" select="$quantum*1"/>
-
-    <xsl:variable name="h_rect"  as="xs:integer" select="$quantum"/>
-    <xsl:variable name="h_space" as="xs:integer" select="$quantum"/>
-    
-    <xsl:variable name="field"   select="$quantum div 10"/>
+    <xsl:variable name="field"   select="$msc-quantum div 10"/>
     
     <xsl:variable name="entity_num" as="xs:integer" select="count(./entities/entity)"/>
     <xsl:variable name="arcset_num" as="xs:integer" select="count(./arcsets/arcset)"/>
@@ -180,8 +201,8 @@
     <xsl:variable name="w" select="$w_rect*$entity_num + $w_space*($entity_num -1) + 2*$field"/>
     <xsl:variable name="h" select="$h_rect*($arcset_num +1) + $h_space*$arcset_num + 2*$field"/>
     
-    <xsl:variable name="k_w" select="if($w>$max_w)then $max_w div $w else 1"/>
-    <xsl:variable name="k_h" select="if($h>$max_h)then $max_h div $h else 1"/>
+    <xsl:variable name="k_w" select="if($w>$msc-max-w)then $msc-max-w div $w else 1"/>
+    <xsl:variable name="k_h" select="if($h>$msc-max-h)then $msc-max-h div $h else 1"/>
     <xsl:variable name="k"   select="if($k_w>$k_h)then $k_h else $k_w"/>
     
     <fig><svg-container>
@@ -194,20 +215,13 @@
             font-size: <xsl:value-of select="$font-size"/>;
           }
           .shapeStyle, circle, rect, path, polygon, line, polyline {
-            stroke-width: <xsl:value-of select="$quantum div 20"/>;
+            stroke-width: <xsl:value-of select="$msc-quantum div 20"/>;
             fill: none;
           }
         </svg:style>
         
         <svg:g transform="translate({$field},{$field})">
-          <xsl:apply-templates mode="#current">
-            <xsl:with-param name="quantum" select="$quantum" as="xs:integer" tunnel="yes"/>
-            <xsl:with-param name="font-size" select="$font-size"  as="xs:integer" tunnel="yes"/>
-            <xsl:with-param name="w_rect"  select="$w_rect"  as="xs:integer" tunnel="yes"/>
-            <xsl:with-param name="w_space" select="$w_space" as="xs:integer" tunnel="yes"/>
-            <xsl:with-param name="h_rect"  select="$h_rect"  as="xs:integer" tunnel="yes"/>
-            <xsl:with-param name="h_space" select="$h_space" as="xs:integer" tunnel="yes"/>    
-          </xsl:apply-templates>      
+          <xsl:apply-templates mode="#current"/>
         </svg:g>
       </svg:svg>
     </svg-container></fig>
@@ -218,15 +232,8 @@
   </xsl:template>
   
   <xsl:template match="entity" mode="draw">
-    <xsl:param name="quantum"     as="xs:integer" tunnel="yes"/>
-    <xsl:param name="font-size"   as="xs:integer" tunnel="yes"/>
     
-    <xsl:param name="w_rect"    as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_space"   as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_rect"    as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_space"   as="xs:integer" tunnel="yes"/>
-    
-    <xsl:variable name="x_shift" as="xs:integer" select="count(preceding-sibling::entity)*($w_rect + $w_space)"/>
+    <xsl:variable name="x_shift" as="xs:float" select="count(preceding-sibling::entity)*($w_rect + $w_space)"/>
     
     <svg:g transform="translate({$x_shift},0)">
       
@@ -235,13 +242,12 @@
         <xsl:with-param name="y" select="$h_rect div 2"/>
       </xsl:apply-templates>  
       
-      
       <xsl:variable name="x_line"  select="$w_rect div 2"/>   
-      <xsl:variable name="main_line_len" as="xs:integer" select="count(ancestor::xml-msc/arcsets/arcset)*($h_rect+$h_space)"/>
+      <xsl:variable name="main_line_len" as="xs:float" select="count(ancestor::xml-msc/arcsets/arcset)*($h_rect+$h_space)"/>
      
       <svg:line
-        x1="{$x_line}" y1="{$quantum}" 
-        x2="{$x_line}" y2="{$quantum + $main_line_len}" 
+        x1="{$x_line}" y1="{$msc-quantum}" 
+        x2="{$x_line}" y2="{$msc-quantum + $main_line_len}" 
       >
         <xsl:if test="@linecolor"> 
           <xsl:attribute name="style"><xsl:value-of select="concat('stroke:',@linecolor,';')"/></xsl:attribute>
@@ -255,12 +261,8 @@
       <xsl:apply-templates mode="#current"/>
   </xsl:template>
   
-  <xsl:template match="arcset" mode="draw">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_space" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_rect"  as="xs:integer" tunnel="yes"/>
-    
-    <xsl:variable name="y_shift" as="xs:integer" 
+  <xsl:template match="arcset" mode="draw">    
+    <xsl:variable name="y_shift" as="xs:float" 
       select="(count(preceding-sibling::arcset)+count(ancestor::xml-msc/entities))*($h_space+$h_rect)"/>
     <svg:g transform="translate(0, {$y_shift})" >
       <xsl:apply-templates mode="#current"/>
@@ -268,20 +270,16 @@
   </xsl:template>
 
   <xsl:template match="arc" mode="draw">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_space" as="xs:integer" tunnel="yes"/>
-    
-    <xsl:variable name="ent_num_from" as="xs:integer" select="count(ancestor::xml-msc/entities/entity[@ent_name=current()/@left_p][1]/preceding-sibling::entity)"/>
+        <xsl:variable name="ent_num_from" as="xs:integer" select="count(ancestor::xml-msc/entities/entity[@ent_name=current()/@left_p][1]/preceding-sibling::entity)"/>
     <xsl:variable name="ent_num_to" as="xs:integer" select="count(ancestor::xml-msc/entities/entity[@ent_name=current()/@right_p][1]/preceding-sibling::entity)"/>
     
-    <xsl:variable name="x_from"  as="xs:integer" select="$ent_num_from*($w_rect+$w_space)"/>
-    <xsl:variable name="x_to"    as="xs:integer" select="$ent_num_to  *($w_rect+$w_space)"/>
-    <xsl:variable name="x_len"   as="xs:integer" select="$x_to -$x_from"/>
+    <xsl:variable name="x_from"  as="xs:float" select="$ent_num_from*($w_rect+$w_space)"/>
+    <xsl:variable name="x_to"    as="xs:float" select="$ent_num_to  *($w_rect+$w_space)"/>
+    <xsl:variable name="x_len"   as="xs:float" select="$x_to -$x_from"/>
     
-    <xsl:variable name="box_arrow_xshift" as="xs:integer" select="if($x_from>$x_to)then $x_to else $x_from"/>
+    <xsl:variable name="box_arrow_xshift" as="xs:float" select="if($x_from>$x_to)then $x_to else $x_from"/>
 
-    <xsl:variable name="shape_xshift" as="xs:integer" select="
+    <xsl:variable name="shape_xshift" as="xs:float" select="
       if(matches(@connect,'\.\.\.|---|\|\|\|')) then 
         0
       else 
@@ -299,39 +297,32 @@
   </xsl:template>
 
   <xsl:template match="arc[matches(@connect,'\.\.\.|---|\|\|\|')]" mode="draw_arc">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_space" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_space" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="font-size"   as="xs:integer" tunnel="yes"/>
     
     <xsl:variable name="n_entities" as="xs:integer" select="count(ancestor::xml-msc/entities/entity)"/>
-    <xsl:variable name="w_line" as="xs:integer" select="$w_rect*$n_entities + $w_space*($n_entities -1)"/>
+    <xsl:variable name="w_line" as="xs:float" select="$w_rect*$n_entities + $w_space*($n_entities -1)"/>
 
     <xsl:choose>
       <xsl:when test="@connect='---'">
         <svg:line x1="0" y1="{$h_rect div 2}" x2="{$w_line}" y2="{$h_rect div 2}" 
-          style="stroke-dasharray:{concat($quantum div 10,',',$quantum div 10)}" />
+          style="stroke-dasharray:{concat($msc-quantum div 10,',',$msc-quantum div 10)}" />
       </xsl:when>
       <xsl:when test="@connect='...'">
         <xsl:for-each select="ancestor::xml-msc/entities/entity">
           <xsl:variable name="x_shift" select="$w_rect div 2 + ($w_rect +$w_space)*(position()-1)"/>
           <svg:line x1="{$x_shift}" y1="0"
-                    x2="{$x_shift}" y2="{$quantum}"
-                    style="stroke-width:{$quantum div 5};stroke:white;stroke-dasharray:{concat($quantum div 10,',',$quantum div 10)}"/>
+                    x2="{$x_shift}" y2="{$msc-quantum}"
+                    style="stroke-width:{$msc-quantum div 5};stroke:white;stroke-dasharray:{concat($msc-quantum div 10,',',$msc-quantum div 10)}"/>
         </xsl:for-each>          
       </xsl:when>        
     </xsl:choose>
    
     <xsl:apply-templates select="." mode="write_label">
       <xsl:with-param name="x" select="$w_line div 2"/>
-      <xsl:with-param name="y" select="$h_rect div 2 + $font-size div 3"/>
-    </xsl:apply-templates>       
+      <xsl:with-param name="y" select="$h_rect div 2 - $font-size div 3"/>
+    </xsl:apply-templates>
   </xsl:template>
   
   <xsl:template match="." mode="write_label">
-    <xsl:param name="font-size" as="xs:integer" tunnel="yes"/>
     <xsl:param name="x" as="xs:float"/>
     <xsl:param name="y" as="xs:float"/>
     
@@ -350,13 +341,9 @@
   </xsl:template>
   
   <xsl:template match="arc[matches(@connect,'rbox|box|note|abox')]" mode="draw_arc">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="x_len" as="xs:integer"   tunnel="yes"/>
-    <xsl:param name="h_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="font-size"   as="xs:integer" tunnel="yes"/>
+    <xsl:param name="x_len" as="xs:float"   tunnel="yes"/>
     
-    <xsl:variable name="w_box" as="xs:integer" select="abs($x_len)+$w_rect"/>    
+    <xsl:variable name="w_box" as="xs:float" select="abs($x_len)+$w_rect"/>    
     
     <xsl:variable name="color" as="xs:string" select="if(@textbgcolor)then @textbgcolor else 'white'"/>
 
@@ -372,7 +359,7 @@
       </xsl:when>        
       <xsl:when test="@connect='abox'">
         <svg:polygon points="
-          {$quantum div 5},0  0,{$h_rect div 2}  {$h_rect div 5},{$h_rect}  
+          {$msc-quantum div 5},0  0,{$h_rect div 2}  {$h_rect div 5},{$h_rect}  
           {$w_box -$h_rect div 5},{$h_rect} {$w_box},{$h_rect div 2}  {$w_box - $h_rect div 5},0 "
           style="fill:{$color};"/>
       </xsl:when>                
@@ -386,11 +373,7 @@
   </xsl:template>
   
   <xsl:template match="arc[matches(@connect,'&gt;|&lt;|-x|x-')]" mode="draw_arc">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="x_len"   as="xs:integer" tunnel="yes"/>    
-    <xsl:param name="w_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="font-size" as="xs:integer" tunnel="yes"/>
+    <xsl:param name="x_len"   as="xs:float" tunnel="yes"/>    
     
     <svg:g>
       <xsl:attribute name="transform">
@@ -409,24 +392,21 @@
     </svg:g>
  
     <xsl:apply-templates select="." mode="write_label">
-      <xsl:with-param name="x" select="if($x_len) then (abs($x_len) div 2 + $w_rect div 2) else (abs($x_len) div 2)"/>
+      <xsl:with-param name="x" select="abs($x_len) div 2 + $w_rect div 2"/>
       <xsl:with-param name="y" select="if($x_len) then ($h_rect div 2 - $font-size div 3) else ($h_rect div 2 + $font-size div 3)"/>      
     </xsl:apply-templates>   
        
   </xsl:template>
   
   <xsl:template name="draw_arrow">
-    <xsl:param name="quantum" as="xs:integer" tunnel="yes"/>
-    <xsl:param name="x_len"   as="xs:integer" tunnel="yes"/>
-    <xsl:param name="w_rect"  as="xs:integer" tunnel="yes"/>
-    <xsl:param name="h_rect"  as="xs:integer" tunnel="yes"/>
+    <xsl:param name="x_len"   as="xs:float" tunnel="yes"/>
     
     <xsl:variable name="self-pointed" as="xs:boolean" select="$x_len=0"/>
     <xsl:variable name="tcmp" as="xs:string" select="concat(',',@connect,',')"/>
     
     <svg:g>
       <xsl:if test="contains(',>>,&lt;&lt;,', $tcmp)"> 
-        <xsl:attribute name="stroke-dasharray" select="concat($quantum div 10,',',$quantum div 10)"/>
+        <xsl:attribute name="stroke-dasharray" select="concat($msc-quantum div 10,',',$msc-quantum div 10)"/>
       </xsl:if>
       
       <xsl:if test="not($x_len = 0)">
@@ -479,22 +459,22 @@
       <xsl:choose>
         <xsl:when test="contains(',->,&lt;-,',$tcmp)">
           <xsl:attribute name="d" select="concat(
-            'M 0,0 L ', -($quantum div 3),',',($quantum div 3)
+            'M 0,0 L ', -($msc-quantum div 3),',',($msc-quantum div 3)
           )"/>
         </xsl:when>
         <xsl:when test="contains(',-x,x-,',$tcmp)">
           <xsl:attribute name="d" select="concat(
-           ' M ', - $quantum -($quantum div 6),',', - ($quantum div 6), 
-           ' L ', - $quantum +($quantum div 6),',', + ($quantum div 6),
-           ' M ', - $quantum -($quantum div 6),',', + ($quantum div 6), 
-           ' L ', - $quantum +($quantum div 6),',', - ($quantum div 6)     
+           ' M ', - $msc-quantum -($msc-quantum div 6),',', - ($msc-quantum div 6), 
+           ' L ', - $msc-quantum +($msc-quantum div 6),',', + ($msc-quantum div 6),
+           ' M ', - $msc-quantum -($msc-quantum div 6),',', + ($msc-quantum div 6), 
+           ' L ', - $msc-quantum +($msc-quantum div 6),',', - ($msc-quantum div 6)     
           )"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:attribute name="d" select="concat(
-            ' M ', -($quantum div 3),',', -($quantum div 3),
+            ' M ', -($msc-quantum div 3),',', -($msc-quantum div 3),
             ' L 0,0 L ',
-            -($quantum div 3),',', +($quantum div 3)
+            -($msc-quantum div 3),',', +($msc-quantum div 3)
           )"/>
         </xsl:otherwise>
       </xsl:choose>

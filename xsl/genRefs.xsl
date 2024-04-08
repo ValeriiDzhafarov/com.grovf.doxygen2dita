@@ -24,7 +24,7 @@
       />
       
       <xsl:variable name="kindExisted" as="xs:boolean"
-        select="if (count($context/compound[@kind = $kind])>0) then true() else false()"
+        select="count($context/compound[@kind = $kind])>0"
       />
       
       <xsl:if test="$doDebug">          
@@ -36,8 +36,10 @@
       </xsl:if>      
       
         <xsl:choose>
-          <xsl:when test="$kindExisted=false() and $doDebug">
-            <xsl:message> [INFO] generateTopicrefs kind:  <xsl:value-of select="$kind"/> not existed in presented XML files. Skip it  </xsl:message>
+          <xsl:when test="$kindExisted=false()">
+            <xsl:if test="$doDebug">
+              <xsl:message> [INFO] generateTopicrefs kind:  <xsl:value-of select="$kind"/> not existed in presented XML files. Skip it  </xsl:message>
+            </xsl:if>
           </xsl:when>          
           <xsl:when test="$kind = 'page'">
             <xsl:apply-templates mode="#current" select="$context/compound[@kind = $kind]"/>
